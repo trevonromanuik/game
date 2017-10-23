@@ -2,10 +2,8 @@
   "name": "Game",
   "version": "1.0.0",
   "description": "",
-  "main": "gameboard.js",
+  "main": "index.js",
   "scripts": {
-    "build": "webpack",
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +13,8 @@
     "lodash": "4.17.4"
   },
   "devDependencies": {
-    "webpack": "3.7.1"
+    "gulp": "3.9.1",
+    "webpack": "3.7.1",
+    "webpack-stream": "4.0.0"
   }
 }
