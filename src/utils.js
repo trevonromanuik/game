@@ -18,6 +18,13 @@ export default {
           }
         
           return array;
-    }
+    },
+
+    id: (() => {
+      let id = 0;
+      return () => {
+        return id++;
+      };
+    })(),
 
 };

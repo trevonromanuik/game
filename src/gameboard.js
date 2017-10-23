@@ -3,12 +3,14 @@ import utils from './utils';
 
 export default class Gameboard {
 	
-	constructor(x, y, flip, colors) {
+	constructor(player, x, y, flip) {
 		
+		this.player = player;
+		this.colors = player.colors;
+
 		this.x = x;
 		this.y = y;
 		this.flip = flip;
-		this.colors = colors;
 
 		this.board = [];
 		for(let i = 0; i < constants.BOARD_SPACES_X; i++) {
@@ -132,14 +134,14 @@ export default class Gameboard {
 			for(let j = 0; j < this.board[i].length; j++) {
 				let unit = this.board[i][j];
 				if(unit === 0) break;
-				let x_pos = this.x + (constants.PADDING * (i + 1)) + (constants.UNIT_WIDTH * i);
-				let y_pos = this.y + (constants.PADDING * (j + 1)) + (constants.UNIT_HEIGHT * j);
+				let x = this.x + (constants.PADDING * (i + 1)) + (constants.UNIT_WIDTH * i);
+				let y = this.y + (constants.PADDING * (j + 1)) + (constants.UNIT_HEIGHT * j);
 				if(this.flip) {
-					x_pos = constants.BOARD_WIDTH - x_pos - constants.UNIT_WIDTH;
-					y_pos = constants.BOARD_HEIGHT - y_pos - constants.UNIT_HEIGHT;
+					x = constants.SIDE_WIDTH - x - constants.UNIT_WIDTH;
+					y = constants.SIDE_HEIGHT - y - constants.UNIT_HEIGHT;
 				}
 				context.fillStyle = this.colors[unit - 1];
-				context.fillRect(x_pos, y_pos, constants.UNIT_WIDTH, constants.UNIT_HEIGHT);
+				context.fillRect(x, y, constants.UNIT_WIDTH, constants.UNIT_HEIGHT);
 			}
 		}
 	}

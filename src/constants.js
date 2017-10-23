@@ -5,6 +5,7 @@ let constants = {
 	UNIT_WIDTH: 32,
 	UNIT_HEIGHT: 32,
 	KEYS: {
+		ENTER: 13,
 		LEFT: 37,
 		UP: 38,
 		RIGHT: 39,
@@ -23,9 +24,18 @@ Object.assign(constants, {
 });
 
 Object.assign(constants, {
+	SIDE_WIDTH: (() => {
+		return constants.BOARD_WIDTH;
+	})(),
+	SIDE_HEIGHT: (() => {
+		return constants.BOARD_HEIGHT + constants.UNIT_HEIGHT + constants.PADDING;
+	})()
+})
+
+Object.assign(constants, {
 	SCREEN_WIDTH: constants.BOARD_WIDTH,
 	SCREEN_HEIGHT: (() => {
-		return (2 * constants.BOARD_HEIGHT) + constants.UNIT_HEIGHT + constants.PADDING;
+		return 2 * constants.SIDE_HEIGHT;
 	})(),
 });
 
