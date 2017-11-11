@@ -1,6 +1,8 @@
 import constants from './constants';
 import utils from './utils';
 
+import Unit from './unit';
+
 export default class Gameboard {
 	
 	static create(units) {
@@ -12,7 +14,7 @@ export default class Gameboard {
 		for(let i = 0; i < constants.BOARD_SPACES_X; i++) {
 			let column = [];
 			for(let j = 0; j < constants.BOARD_SPACES_Y; j++) {
-				column.push(0);
+				column.push(null);
 			}
 			gameboard.board.push(column);
 		}
@@ -31,7 +33,7 @@ export default class Gameboard {
 		let columns = [];
 		for(let i = 0; i < gameboard.board.length; i++) {
 			let column = gameboard.board[i];
-			if(column[column.length - 1] === 0) {
+			if(column[column.length - 1] === null) {
 				columns.push(i);
 			}
 		}
@@ -43,18 +45,24 @@ export default class Gameboard {
 			let random_index = Math.floor(Math.random() * columns.length);
 			let column_index = columns[random_index];
 			let column = gameboard.board[column_index];
-			
+
 			// add the unit to the column
 			let index = Gameboard.addUnitToColumn(gameboard, column_index, unit);
 			
+			// set the unit's x to its target_x
+			unit.x = unit.target_x;
+
+			// set the unit's y to below the screen
+			unit.y = unit.target_y + 300;
+
 			if(index === -1) {
 				// uh oh - column is full
 				columns.splice(random_index, 1);
-				units.unshift(unit);
+				unit_types.unshift(unit_type);
 			} else if(Gameboard.checkPositionForCombo(gameboard, column_index, index)) {
 				// there's a conflict - remove and try again
 				Gameboard.removeUnitFromColumn(gameboard, column_index);
-				units.unshift(unit);
+				unit_types.unshift(unit_type);
 			} else {
 				// check if the column is now full
 				if(index + 1 === constants.BOARD_SPACES_Y) {			
@@ -94,9 +102,9 @@ export default class Gameboard {
 
 	static getColumnOpenIndex(gameboard, column_index) {
 		let column = gameboard.board[column_index];
-		if(column[column.length - 1] !== 0) return -1;
+		if(column[column.length - 1] !== null) return -1;
 		for(let i = column.length - 2; i >= -1; i--) {
-			if(i === -1 || column[i] !== 0) {
+			if(i === -1 || column[i] !== null) {
 				return i + 1;			
 			}
 		}
@@ -105,8 +113,18 @@ export default class Gameboard {
 
 	static addUnitToColumn(gameboard, column_index, unit) {
 		let index = Gameboard.getColumnOpenIndex(gameboard, column_index);
-		let column = gameboard.board[column_index];
-		if(index > -1) column[index] = unit;
+		if(index > -1) {
+			
+			let column = gameboard.board[column_index];
+			column[index] = unit;
+
+			Unit.moveTo(
+				unit,
+				constants.PADDING + (column_index * constants.PADDING) + (column_index * constants.UNIT_WIDTH),
+				constants.PADDING + (index * constants.PADDING) + (index * constants.UNIT_HEIGHT)
+			);
+
+		}
 		return index;
 	}
 
@@ -123,25 +141,28 @@ export default class Gameboard {
 		
 		index--;
 		let unit = column[index];
-		column[index] = 0;
+		column[index] = null;
 
 		return unit;
 
 	}
 
-	static draw(gameboard, x, y, flip, colors, context) {
+	static update(gameboard, progress) {
+		for(let i = 0; i < constants.BOARD_SPACES_X; i++) {
+			for(let j = 0; j < constants.BOARD_SPACES_Y; j++) {
+				let unit = gameboard.board[i][j];
+				if(unit === null) break;
+				Unit.update(unit, progress);
+			}
+		}
+	}
+
+	static draw(gameboard, colors, context) {
 		for(let i = 0; i < gameboard.board.length; i++) {
 			for(let j = 0; j < gameboard.board[i].length; j++) {
 				let unit = gameboard.board[i][j];
-				if(unit === 0) break;
-				let _x = x + (constants.PADDING * (i + 1)) + (constants.UNIT_WIDTH * i);
-				let _y = y + (constants.PADDING * (j + 1)) + (constants.UNIT_HEIGHT * j);
-				if(flip) {
-					_x = constants.SIDE_WIDTH - _x - constants.UNIT_WIDTH;
-					_y = constants.SIDE_HEIGHT - _y - constants.UNIT_HEIGHT;
-				}
-				context.fillStyle = colors[unit - 1];
-				context.fillRect(_x, _y, constants.UNIT_WIDTH, constants.UNIT_HEIGHT);
+				if(unit === null) break;
+				Unit.draw(unit, colors[unit.color_index], context);
 			}
 		}
 	}

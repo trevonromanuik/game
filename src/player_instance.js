@@ -1,5 +1,6 @@
 import utils from './utils';
 import constants from './constants';
+import Unit from './unit';
 import Gameboard from './gameboard';
 
 export default class PlayerInstance {
@@ -17,7 +18,10 @@ export default class PlayerInstance {
 
         player_instance.hp = 30;
         player_instance.mp = 0;
-        player_instance.gameboard = Gameboard.create([1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3]);
+
+        player_instance.gameboard = Gameboard.create([1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3].map((unit_type) => {
+            return Unit.create(unit_type, unit_type - 1);
+        }));
 
         player_instance.cursor_index = 0;
         player_instance.grabbed_unit = null;
@@ -38,8 +42,14 @@ export default class PlayerInstance {
     }
 
     static update(player_instance, prev_state, state, progress) {
-        
+
         PlayerInstance.processInput(player_instance, prev_state, state, progress);
+
+        Gameboard.update(player_instance.gameboard, progress);
+
+        if(player_instance.grabbed_unit) {
+            Unit.update(player_instance.grabbed_unit, progress);
+        }
 
     }
 
@@ -61,10 +71,24 @@ export default class PlayerInstance {
             if(left) {
                 if(player_instance.cursor_index > 0) {
                     player_instance.cursor_index--;
+                    if(player_instance.grabbed_unit) {
+                        Unit.snapTo(
+                            player_instance.grabbed_unit,
+                            player_instance.grabbed_unit.target_x - constants.UNIT_WIDTH - constants.PADDING,
+                            player_instance.grabbed_unit.target_y
+                        );
+                    }
                 }
             } else {
                 if(player_instance.cursor_index < (constants.BOARD_SPACES_X - 1)) {
                     player_instance.cursor_index++;
+                    if(player_instance.grabbed_unit) {
+                        Unit.snapTo(
+                            player_instance.grabbed_unit,
+                            player_instance.grabbed_unit.target_x + constants.UNIT_WIDTH + constants.PADDING,
+                            player_instance.grabbed_unit.target_y
+                        );
+                    }
                 }
             }
         } else if(up ^ down) {
@@ -91,8 +115,11 @@ export default class PlayerInstance {
                     let unit = Gameboard.removeUnitFromColumn(player_instance.gameboard, player_instance.cursor_index);
                     
                     // short out if the column is empty
-                    if(unit === 0) return;
+                    if(unit === null) return;
                     
+                    // move the unit to the cursor
+                    Unit.moveTo(unit, unit.target_x, constants.PADDING + constants.BOARD_HEIGHT);
+
                     player_instance.grabbed_unit = unit;
                     player_instance.grabbed_index = player_instance.cursor_index;
                 })();
@@ -104,49 +131,25 @@ export default class PlayerInstance {
     static draw(player_instance, context) {
 
         Gameboard.draw(
-            player_instance.gameboard, 
-            player_instance.x,
-            player_instance.y,
-            player_instance.flip,
+            player_instance.gameboard,
             player_instance.player.colors,
             context
         );
 
         // draw the grabbed unit
         if(player_instance.grabbed_unit) {
-
-            let x = player_instance.x + constants.PADDING + (player_instance.cursor_index * (constants.PADDING + constants.UNIT_WIDTH));
-            let y = player_instance.y + constants.PADDING + constants.BOARD_HEIGHT;
-            
-            if(player_instance.flip) {
-                x = constants.SIDE_WIDTH - x - constants.UNIT_WIDTH;
-                y = constants.SIDE_HEIGHT - y - constants.UNIT_HEIGHT;
-            }
-
-            context.fillStyle = player_instance.player.colors[player_instance.grabbed_unit - 1];
-            context.fillRect(x, y, constants.UNIT_WIDTH, constants.UNIT_HEIGHT);
-
+            Unit.draw(player_instance.grabbed_unit, player_instance.player.colors[player_instance.grabbed_unit.color_index], context);
         }
 
         // draw the cursor
-        let cursor_tip_x = player_instance.x + constants.PADDING + (player_instance.cursor_index * (constants.PADDING + constants.UNIT_WIDTH)) + (constants.UNIT_WIDTH / 2);
-        let cursor_tip_y = player_instance.y + constants.PADDING + constants.BOARD_HEIGHT + (constants.UNIT_HEIGHT / 2);
+        let cursor_tip_x = constants.PADDING + (player_instance.cursor_index * (constants.PADDING + constants.UNIT_WIDTH)) + (constants.UNIT_WIDTH / 2);
+        let cursor_tip_y = constants.PADDING + constants.BOARD_HEIGHT + (constants.UNIT_HEIGHT / 2);
         
-        if(player_instance.flip) {
-            cursor_tip_x = constants.SIDE_WIDTH - cursor_tip_x;
-            cursor_tip_y = constants.SIDE_HEIGHT - cursor_tip_y;
-        }
-
         context.fillStyle = 'black';
         context.beginPath();
         context.moveTo(cursor_tip_x, cursor_tip_y);
-        if(player_instance.flip) {
-            context.lineTo(cursor_tip_x + (constants.UNIT_WIDTH / 2), cursor_tip_y - (constants.UNIT_HEIGHT / 2));
-            context.lineTo(cursor_tip_x - (constants.UNIT_WIDTH / 2), cursor_tip_y - (constants.UNIT_HEIGHT / 2));
-        } else {
-            context.lineTo(cursor_tip_x + (constants.UNIT_WIDTH / 2), cursor_tip_y + (constants.UNIT_HEIGHT / 2));
-            context.lineTo(cursor_tip_x - (constants.UNIT_WIDTH / 2), cursor_tip_y + (constants.UNIT_HEIGHT / 2));
-        }
+        context.lineTo(cursor_tip_x + (constants.UNIT_WIDTH / 2), cursor_tip_y + (constants.UNIT_HEIGHT / 2));
+        context.lineTo(cursor_tip_x - (constants.UNIT_WIDTH / 2), cursor_tip_y + (constants.UNIT_HEIGHT / 2));
         context.fill();
 
     }
